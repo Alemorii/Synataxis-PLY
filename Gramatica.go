@@ -99,7 +99,7 @@ pués de generar 1 proyecto
   "tareas": <lista_tareas>, 
   "fecha_inicio": date, 
   "fecha_fin": date, 
-  "video": string, 
+  "video": string, //ESTO HAY QUE CAMBIAR!!!!
   "conclusion": string 
 } 
 //<proyecto> genera los datos que tiene que tener 1 proyecto, es cada 
