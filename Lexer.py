@@ -42,8 +42,8 @@ tokens = (
    'STRING_URL', #COMPUESTO
    'STRING_EMAIL',#COMPUESTO
    'BOOL',#COMPUESTO
-   
 )
+t_ignore = ' \t'
 #Expresiones de simbolos 
 t_L_LLAVES = r'\{'
 t_R_LLAVES = r'\}'
