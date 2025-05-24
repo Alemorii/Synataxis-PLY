@@ -37,6 +37,7 @@ tokens = (
    'STRING',  # para strings genéricos
    'NUMERO',  # para valores numéricos genéricos
    'DOS_PUNTOS',
+   'COMA'
 )
 #Expresiones de simbolos 
 t_L_LLAVES = r'\{'
