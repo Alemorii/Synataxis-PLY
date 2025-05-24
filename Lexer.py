@@ -1,6 +1,7 @@
 import ply.lex as lex
 tokens = (
    'EQUIPOS',
+   'hola'
    'NOMBRE_EQUIPO',
    'IDENTIDAD_EQUIPO',
    'LINK',
