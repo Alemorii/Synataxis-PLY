@@ -64,6 +64,12 @@ def t_STRING(t):
    r'"[a-zA-Z][a-zA-Z,.\s\_\'-:]+"'
    t.value = t.value[1:-1]
    return t
+   
+def t_BOOL(t):
+    r'true|false'
+    t.value = True if t.value == 'true' else False
+    return t
+
 
 data = input("ingrese la data")
 
