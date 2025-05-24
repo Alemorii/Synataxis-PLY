@@ -3,7 +3,7 @@ tokens = (
    'EQUIPOS',
    'NOMBRE_EQUIPO',
    'IDENTIDAD_EQUIPO',
-   'LINK',
+   'LINK', 
    'ASIGNATURA',
    'CARRERA',
    'UNIVERSIDAD_REGIONAL',
@@ -35,9 +35,14 @@ tokens = (
    'L_CORCHETES',
    'R_CORCHETES',
    'STRING',  # para strings genéricos
-   'NUMERO',  # para valores numéricos genéricos
+   'REAL', 
+   'ENTERO',
    'DOS_PUNTOS',
-   'COMA'
+   'COMA',
+   'STRING_URL', #COMPUESTO
+   'STRING_EMAIL',#COMPUESTO
+   'BOOL',#COMPUESTO
+   
 )
 #Expresiones de simbolos 
 t_L_LLAVES = r'\{'
@@ -50,12 +55,15 @@ t_COMA = r','
 t_EQUIPOS = r'equipos'# tendria que ser r'"equipos:"'?
 t_INTEGRANTES = r'integrantes'
 t_PROYECTOS = r'proyectos'
+t_NOMBRE_EQUIPO = r'"nombre_equipo'
+t_CALLE = r'calle'
+
 
 #Expresiones regulares compuestas 
-def t_EDAD(t):
-   r'[1-9][0-9]?' #se podria hacer solo con esto?
-   t.value = int(t.value) 
-   return t 
+def t_STRING(t):
+   r'"[a-zA-Z][a-zA-Z,.\s\_\'-:]+"'
+   t.value = t.value[1:-1]
+   return t
 
 data = input("ingrese la data")
 
