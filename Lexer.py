@@ -75,15 +75,14 @@ t_EMAIL = r'"email"'
 t_HABILIDADES = r'"habilidades"'
 t_SALARIO = r'"salario"'
 t_ACTIVO = r'"activo"'
-t_PROYECTOS = r'"proyectos"'
 t_ESTADO = r'"estado"'
 t_RESUMEN = r'"resumen"'
 t_FECHA_INICIO = r'"fecha_inicio"'
 t_FECHA_FIN = r'"fecha_fin"'
 t_VIDEO = r'"video"'
-t_CONCLUSION = r'"conclusion:'
+t_CONCLUSION = r'"conclusion"'
 t_VERSION = r'"version"'
-t_FIRMA_DIGITAL = r'"firma_digital"
+t_FIRMA_DIGITAL = r'"firma_digital"'
 
 
 #Expresiones regulares compuestas 
