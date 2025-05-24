@@ -42,6 +42,7 @@ tokens = (
    'STRING_URL', #COMPUESTO
    'STRING_EMAIL',#COMPUESTO
    'BOOL',#COMPUESTO
+   'COMILLAS',
 )
 t_ignore = ' \t'
 #Expresiones de simbolos 
@@ -51,12 +52,13 @@ t_L_CORCHETES = r'\['
 t_R_CORCHETES = r'\]'
 t_DOS_PUNTOS = r':'
 t_COMA = r','
+t_COMILLAS = r'"'
 
 #Expresiones regulares simples
-t_EQUIPOS = r'equipos'# tendria que ser r'"equipos:"'?
-t_INTEGRANTES = r'integrantes'
-t_PROYECTOS = r'proyectos'
-t_NOMBRE_EQUIPO = r'"nombre_equipo'
+t_EQUIPOS = r'"equipos"'# tendria que ser r'"equipos:"'?
+t_INTEGRANTES = r'"integrantes"'
+t_PROYECTOS = r'"proyectos"'
+t_NOMBRE_EQUIPO = r'"nombre_equipo"'
 t_IDENTIDAD_EQUIPO = r'"identidad_equipo"'
 t_LINK = r'"link"'
 t_ASIGNATURA = r'"asignatura"'
@@ -87,8 +89,7 @@ t_FIRMA_DIGITAL = r'"firma_digital"'
 
 #Expresiones regulares compuestas 
 def t_STRING(t):
-   r'"[a-zA-Z][a-zA-Z,.\s\_\'-:]+"'
-   t.value = t.value[1:-1]
+   r'[a-zA-Z][a-zA-Z,.\s\_\'-:]+'
    return t
    
 def t_BOOL(t):
