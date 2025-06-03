@@ -1,0 +1,73 @@
+"nombre_equipo": "Sintaxis y semantica de Lenguajes",
+
+ "identidad_equipo":
+
+"https://www.frre.utn.edu.ar/public/themes/utnsd/images/UTN_FRRE-isi.png",
+
+ "link": "https://frre.cvg.utn.edu.ar/course/view.php?id=399",
+
+ "asignatura": "Sintaxis y semantica de Lenguajes",
+
+ "carrera": "Ingenieria en sistemas de Informacion",
+
+ "universidad_regional": "UTN Facultad Regional Resistencia",
+
+ "dirección": {
+
+ "calle": "French 414",
+
+ "ciudad": "Resistencia",
+
+ "país": "argentina"
+
+ },
+
+ "alianza_equipo": "la organizacion del equipo se realiza segun la
+
+planificacion anual, junto al cronograma de clases. Alli se determinan los horarios
+
+de clases,temas a tratar cada clase y resultados esperados. La comunicacion entre
+
+integrantes se realiza mediante correo electronico, grupos de whatsapp",
+
+ "integrantes": [
+
+ {
+
+ "nombre": "Rodrigo Vigil",
+
+ "edad": 30,
+
+ "cargo": "Marketing",
+
+ "foto": "https://pbs.twimg.com/media/FCPNWd8XsAg5AkL.jpg",
+
+ "email": "rodrigo@chirigui.com.mx",
+
+ "habilidades": "receptor, bateador",
+
+ "salario": 57000.45,
+
+ "activo": true
+
+ },
+
+ {
+
+ "nombre": "Juliana Torre",
+
+ "edad": 22,
+
+ "cargo": "Project Manager",
+
+ "foto":
+
+"https://i.pinimg.com/736x/96/89/97/9689977519645c642236582b6dc64c33.jpg",
+
+ "email": "juliana@bears.com",
+
+ "habilidades": "receptor, lanceador",
+
+ "salario": 81300.45,
+
+ "activo": true
