@@ -39,12 +39,14 @@ tokens = (
    'ENTERO',
    'DOS_PUNTOS',
    'COMA',
-   'STRING_URL', #COMPUESTO
-   'STRING_EMAIL',#COMPUESTO
+   'STRING_URL', #COMPUESTO-listo
+   'STRING_EMAIL',#COMPUESTO-listo
    'BOOL',#COMPUESTO
    'COMILLAS',
+   'SLASH',
+   'FECHA', #listo
 )
-t_ignore = ' \t'
+
 #Expresiones de simbolos 
 t_L_LLAVES = r'\{'
 t_R_LLAVES = r'\}'
@@ -53,6 +55,7 @@ t_R_CORCHETES = r'\]'
 t_DOS_PUNTOS = r':'
 t_COMA = r','
 t_COMILLAS = r'"'
+t_SLASH= r"/"
 
 #Expresiones regulares simples
 t_EQUIPOS = r'"equipos"'# tendria que ser r'"equipos:"'?
@@ -86,16 +89,41 @@ t_CONCLUSION = r'"conclusion"'
 t_VERSION = r'"version"'
 t_FIRMA_DIGITAL = r'"firma_digital"'
 
-
+t_ignore = ' \t'
 #Expresiones regulares compuestas 
-def t_STRING(t):
-   r'[a-zA-Z][a-zA-Z,.\s\_\'-:]+'
+def t_FECHA(t):
+   r'(19[0-9][0-9]|20[0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-9]|3[0-1])'
+   return t
+
+def t_REAL(t):
+   r'-?\d+\.\d+'
+   t.value = float(t.value)
+   return t
+
+def t_ENTERO(t):
+   r'-?\d+'
+   t.value = int(t.value)
    return t
    
 def t_BOOL(t):
-    r'true|false'
-    t.value = True if t.value == 'true' else False
-    return t
+   r'true|false'
+   t.value = True if t.value == 'true' else False
+   return t
+
+def t_STRING_URL(t):
+   r'http[s]?://[a-zA-Z0-9.-]+(:[0-9]+)?(/[a-zA-Z0-9._/#:-]*)*'
+   return t
+
+def t_STRING_EMAIL(t):
+   r'"[a-zA-Z0-9._+-]+@[a-zA-Z0-9._+-]+\.[a-zA-Z]{2,4}"'
+   return t
+
+
+def t_STRING(t):
+   r'[a-zA-Z.\s\_\'-]+ |[a-zA-Z]'
+   return t
+
+
 
 
 data = input("ingrese la data")
