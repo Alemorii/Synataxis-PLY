@@ -1,4 +1,5 @@
 import ply.lex as lex
+import sys
 tokens = (
    'EQUIPOS',
    'NOMBRE_EQUIPO',
@@ -124,10 +125,6 @@ def t_STRING(t):
    return t
 
 
-
-
-data = input("ingrese la data")
-
 #funcion de errore necesaria 
 def t_error(t):
    print("Illegal character '%s'" % t.value[0])
@@ -135,10 +132,47 @@ def t_error(t):
 
 #construye el lexer
 lexer = lex.lex()
-lexer.input(data)
 
-for tok in lexer:
-   print(tok)
+def procesar_archivo(file_name): #lee archivo y muestra tokens
+   try:
+      with open(file_name, 'r', encoding ='utf-8')as f:
+         data = f.read()
+      
+      lexer.input(data)
+
+      print(f"\n--- Analizando archivo: {file_name} ---")
+      for tok in lexer:
+         print(tok)
+      print("Análisis léxico completo.")
+   except FileNotFoundError:
+      print("error, archivo no encontrado")
+
+program = True
+if __name__ == "__main__":
+   while program == True:
+      print("\n -- Bienvenidx al analizador lexico--")
+      print("1. Procesar archivo actual'ejemplo.txt'")
+      print("2. Procesar otro archivo")
+      print("3. procesar tokens de texto")
+      print("4. Salir")
+      print('-'* 40)
+
+      choice = input("Elige una opcion (1,2,3,4) :")
+
+      match choice:
+         case "1":
+            procesar_archivo('ejemplo.txt')
+         case "2":
+            file_name = input("introduzca el nombre del archivo :" )
+            procesar_archivo(file_name)
+         case "3":
+            data = input("ingrese texto a tokenizar :\n ") 
+            lexer.input(data)
+            for tok in lexer:
+               print(tok) 
+            print("analisis lexico completo") 
+         case "4": 
+            sys.exit() 
 
 
 
