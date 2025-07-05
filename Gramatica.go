@@ -63,6 +63,18 @@ i integrantes
   "pais": string 
   "ciudad": string, 
 } 
+
+<direccion> --> { 
+  "pais": string, 
+  "calle": string, 
+  "ciudad": string 
+}
+
+<direccion> --> { 
+  "pais": string, 
+  "ciudad": string, 
+  "calle": string 
+}
  
 <direccion> --> {} 
 // se general las distintas combinaciones que son posibles de tener en 
