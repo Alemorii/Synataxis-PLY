@@ -1,15 +1,16 @@
 import ply.yacc as yacc 
-from lexer import tokens, lexer
+from LexerConsola import tokens, lexer
 
 start = 'json'
 
 resultado = None
 
 def p_json(p):
-    '''json: L_LLAVES EQUIPOS DOS_PUNTOS lista_equipos COMA 
-        VERSION DOS_PUNTOS nullable_string COMA 
-        FIRMA_DIGITAL DOS_PUNTOS nullable_string 
-        R_llaves'''
+    '''json : L_LLAVES \
+    EQUIPOS DOS_PUNTOS lista_equipos COMA \
+    VERSION DOS_PUNTOS nullable_string COMA \
+    FIRMA_DIGITAL DOS_PUNTOS nullable_string \
+    R_LLAVES'''
     global resultado
     p[0] = {
         "equipos": p[4],
@@ -27,17 +28,17 @@ def p_lista_equipos(p):
         p[0] = [p[2]] + p[5]
 
 def p_equipo(p):
-    '''equipo : L_LLAVES
-            NOMBRE_EQUIPO DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-            IDENTIDAD_EQUIPO DOS_PUNTOS COMILLAS STRING_URL COMILLAS COMA
-            DIRECCION DOS_PUNTOS direccion COMA
-            LINK DOS_PUNTOS COMILLAS STRING_URL COMILLAS COMA
-            CARRERA DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-            ASIGNATURA DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-            UNIVERSIDAD_REGIONAL DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-            ALIANZA_EQUIPO DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-            INTEGRANTES DOS_PUNTOS lista_integrantes COMA
-            PROYECTOS DOS_PUNTOS lista_proyectos
+    '''equipo : L_LLAVES \
+            NOMBRE_EQUIPO DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+            IDENTIDAD_EQUIPO DOS_PUNTOS COMILLAS STRING_URL COMILLAS COMA \
+            DIRECCION DOS_PUNTOS direccion COMA \
+            LINK DOS_PUNTOS COMILLAS STRING_URL COMILLAS COMA \
+            CARRERA DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+            ASIGNATURA DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+            UNIVERSIDAD_REGIONAL DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+            ALIANZA_EQUIPO DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+            INTEGRANTES DOS_PUNTOS lista_integrantes COMA \
+            PROYECTOS DOS_PUNTOS lista_proyectos \
             R_LLAVES'''
     p[0] = {
         "nombre_equipo": p[5],
@@ -86,16 +87,16 @@ def p_lista_integrantes_varios(p):
     p[0] = [p[2]] + p[4]  # concatena el integrante con el resto de la lista
 
 def p_integrante(p):
-    '''integrante : L_LLAVES
-                        NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                        EDAD DOS_PUNTOS NUMBER COMA
-                        CARGO DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                        FOTO DOS_PUNTOS COMILLAS STRING_URL COMILLAS COMA
-                        EMAIL DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                        HABILIDADES DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                        SALARIO DOS_PUNTOS NUMBER COMA
-                        ACTIVO DOS_PUNTOS BOOLEAN
-                sR_LLAVES'''
+    '''integrante : L_LLAVES \
+                        NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+                        EDAD DOS_PUNTOS ENTERO COMA \
+                        CARGO DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+                        FOTO DOS_PUNTOS COMILLAS STRING_URL COMILLAS COMA \
+                        EMAIL DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+                        HABILIDADES DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+                        SALARIO DOS_PUNTOS ENTERO COMA \
+                        ACTIVO DOS_PUNTOS BOOL \
+                R_LLAVES'''
     p[0] = (
         p[5],   # nombre
         p[10],  # edad
@@ -116,15 +117,15 @@ def p_lista_proyectos_varios(p):
     p[0] = [p[2]] + p[4]  # concatena el proyecto con el resto de la lista
 
 def p_proyecto(p):
-    '''proyecto : L_LLAVES
-                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    TAREAS DOS_PUNTOS lista_tareas COMA
-                    FECHA_INICIO DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    FECHA_FIN DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    VIDEO DOS_PUNTOS COMILLAS STRING_URL COMILLAS COMA
-                    CONCLUSION DOS_PUNTOS COMILLAS STRING COMILLAS
+    '''proyecto : L_LLAVES \
+                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+                    TAREAS DOS_PUNTOS lista_tareas COMA \
+                    FECHA_INICIO DOS_PUNTOS COMILLAS FECHA COMILLAS COMA \
+                    FECHA_FIN DOS_PUNTOS COMILLAS FECHA COMILLAS COMA \
+                    VIDEO DOS_PUNTOS COMILLAS STRING_URL COMILLAS COMA \
+                    CONCLUSION DOS_PUNTOS COMILLAS STRING COMILLAS \
                 R_LLAVES'''
     p[0] = (
         p[5],   # nombre
@@ -151,63 +152,108 @@ def p_tareas_varios(p):
     p[0] = [p[1]] + p[3]  # concatena tarea con el resto de la lista
 
 def p_tarea_nombre_estado_resumen(p):
-    '''tarea : L_LLAVES
-                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    FECHA_INICIO DOS_PUNTOS nullable_date COMA
-                    FECHA_FIN DOS_PUNTOS nullable_date
+    '''tarea : L_LLAVES\
+                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA \
+                    FECHA_INICIO DOS_PUNTOS nullable_date COMA \
+                    FECHA_FIN DOS_PUNTOS nullable_date \
             R_LLAVES'''
     p[0] = (p[5], p[10], p[15], p[20], p[23])
 
 
 def p_tarea_nombre_resumen_estado(p):
-    '''tarea : L_LLAVES
-                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    FECHA_INICIO DOS_PUNTOS nullable_date COMA
-                    FECHA_FIN DOS_PUNTOS nullable_date
+    '''tarea : L_LLAVES\
+                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    FECHA_INICIO DOS_PUNTOS nullable_date COMA\
+                    FECHA_FIN DOS_PUNTOS nullable_date\
             R_LLAVES'''
     p[0] = (p[5], p[15], p[10], p[20], p[23])
 
 
 def p_tarea_estado_nombre_resumen(p):
-    '''tarea : L_LLAVES
-                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    FECHA_INICIO DOS_PUNTOS nullable_date COMA
-                    FECHA_FIN DOS_PUNTOS nullable_date
+    '''tarea : L_LLAVES\
+                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    FECHA_INICIO DOS_PUNTOS nullable_date COMA\
+                    FECHA_FIN DOS_PUNTOS nullable_date\
             R_LLAVES'''
     p[0] = (p[10], p[5], p[15], p[20], p[23])
 
 def p_tarea_estado_resumen_nombre(p):
-    '''tarea : L_LLAVES
-                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    FECHA_INICIO DOS_PUNTOS nullable_date COMA
-                    FECHA_FIN DOS_PUNTOS nullable_date
+    '''tarea : L_LLAVES\
+                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    FECHA_INICIO DOS_PUNTOS nullable_date COMA\
+                    FECHA_FIN DOS_PUNTOS nullable_date\
             R_LLAVES'''
     p[0] = (p[15], p[5], p[10], p[20], p[23])
 
 def p_tarea_resumen_nombre_estado(p):
-    '''tarea : L_LLAVES
-                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    FECHA_INICIO DOS_PUNTOS nullable_date COMA
-                    FECHA_FIN DOS_PUNTOS nullable_date
+    '''tarea : L_LLAVES\
+                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    FECHA_INICIO DOS_PUNTOS nullable_date COMA\
+                    FECHA_FIN DOS_PUNTOS nullable_date\
             R_LLAVES'''
     p[0] = (p[10], p[15], p[5], p[20], p[23])
 
 def p_tarea_resumen_estado_nombre(p):
-    '''tarea : L_LLAVES
-                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA
-                    FECHA_INICIO DOS_PUNTOS nullable_date COMA
-                    FECHA_FIN DOS_PUNTOS nullable_date
+    '''tarea : L_LLAVES\
+                    RESUMEN DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    ESTADO DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    NOMBRE DOS_PUNTOS COMILLAS STRING COMILLAS COMA\
+                    FECHA_INICIO DOS_PUNTOS nullable_date COMA\
+                    FECHA_FIN DOS_PUNTOS nullable_date\
             R_LLAVES'''
     p[0] = (p[15], p[10], p[5], p[20], p[23])
+
+#Nullable date
+def p_nullable_date_fecha(p): 
+    'nullable_date : FECHA'
+    p[0] = p[1]
+
+def p_nullable_date_null(p):
+    'nullable_date : NULL'
+    p[0] = None
+
+# Nullable string
+def p_nullable_string_string(p):
+    'nullable_string : STRING'
+    p[0] = p[1]
+
+def p_nullable_string_null(p):
+    'nullable_string : NULL'
+    p[0] = None
+
+# Nullable integer
+def p_nullable_integer_number(p):
+    'nullable_integer : ENTERO'
+    p[0] = p[1]
+
+def p_nullable_integer_null(p):
+    'nullable_integer : NULL'
+    p[0] = None
+
+# stringURL (token completo)
+def p_stringURL(p):
+    'stringURL : STRING_URL'
+    p[0] = p[1]
+
+# stringEmail (token completo)
+def p_stringEmail(p):
+    'stringEmail : STRING_EMAIL'
+    p[0] = p[1]
+
+def p_error(p):
+    if p:
+        print(f"Error de sintaxis en token {p.type}, valor {p.value}")
+    else:
+        print("Error de sintaxis al final de la entrada")
+
+parser = yacc.yacc()
