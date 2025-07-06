@@ -117,7 +117,8 @@ pués de generar 1 proyecto
 //<proyecto> genera los datos que tiene que tener 1 proyecto, es cada 
 uno pueden existir varias tareas 
  
-<lista_tareas> --> [<tareas>]   
+<lista_tareas> --> [<tareas>]  
+<tareas>--> <tarea> | <tarea>,<tareas>
 //<lista_tareas> se deriva en <tareas> 
 //<tareas> se deriva un t > 0 tareas 
  
