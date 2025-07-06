@@ -16,7 +16,7 @@ terminal <equipo> terminal, y la recursión de <lista_equipos>
  
 <equipo> --> { 
   "nombre_equipo": string, 
-  "identidad_equipo": string, 
+  "identidad_equipo": <stringURL>, 
   "link": <stringURL>, 
   "asignatura": string, 
   "carrera": string, 
@@ -111,7 +111,7 @@ pués de generar 1 proyecto
   "tareas": <lista_tareas>, 
   "fecha_inicio": date, 
   "fecha_fin": date, 
-  "video": string, //ESTO HAY QUE CAMBIAR!!!!
+  "video": <stringURL> //ESTO HAY QUE CAMBIAR!!!!
   "conclusion": string 
 } 
 //<proyecto> genera los datos que tiene que tener 1 proyecto, es cada 
