@@ -1,0 +1,48 @@
+{ "equipos": [
+ {
+ "nombre_equipo": string,
+ "identidad_equipo": url,
+ "link": url,
+ "asignatura": string,
+ "carrera": string,
+ "universidad_regional": string,
+ "dirección": {
+ "calle": string,
+ "ciudad": string,
+ "país": string
+ },
+ "alianza_equipo": string,
+ "integrantes": [
+ {
+ "nombre": string,
+ "edad": integer,
+ "cargo": string,
+ "foto": url,
+ "email": email,
+ "habilidades": string,
+ "salario": float,
+ "activo": bool
+ } ],
+ "proyectos": [
+ {
+ "nombre": string,
+ "estado": string,
+ "resumen": string,
+ "tareas": [
+ {
+ "nombre": string,
+ "estado": string,
+ "resumen": string,
+ "fecha_inicio": date,
+ "fecha_fin": date
+ } ],
+ "fecha_inicio": date,
+ "fecha_fin": date,
+ "video": url,
+ "conclusion": string,
+ } ]
+ }
+ ],
+ "version": string,
+ "firma_digital": string
+}
