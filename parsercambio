@@ -1,0 +1,599 @@
+import ply.yacc as yacc
+from LexerQueCreoQueAnda import tokens, lexer
+import os
+import html
+import tkinter as tk
+from tkinter import filedialog, messagebox, scrolledtext
+import webbrowser
+import traceback
+
+# Estructura global para almacenar los datos
+datos_json = {
+    "equipos": [],
+    "version": "",
+    "firma_digital": ""
+}
+
+# Variable global para el archivo actual
+archivo_actual = ""
+html_file_handle = None
+html_file_path = ""
+
+# -------------------------------
+# SECCIÓN DEL PARSER (ANÁLISIS SINTÁCTICO) 
+# -------------------------------
+
+def p_json(p):
+    '''json : L_LLAVES EQUIPOS DOS_PUNTOS lista_equipos coma_opcional \
+             VERSION DOS_PUNTOS STRING COMA \
+             FIRMA_DIGITAL DOS_PUNTOS STRING \
+             R_LLAVES'''
+    datos_json["version"] = p[8].strip('"')
+    datos_json["firma_digital"] = p[12].strip('"')
+    
+    # Generar TODO el HTML al final
+    generar_html_completo(html_file_handle)
+    html_file_handle.close()
+    
+    mostrar_resultado(f" Documento JSON válido\nHTML generado: {html_file_path}")
+
+def p_coma_opcional(p):
+    '''coma_opcional : COMA
+                     | vacio'''
+    pass
+
+def p_vacio(p):
+    'vacio :'
+    pass
+
+def p_lista_equipos(p):
+    '''lista_equipos : L_CORCHETES contenido_lista_equipos R_CORCHETES'''
+    p[0] = p[2]
+
+def p_contenido_lista_equipos(p):
+    '''contenido_lista_equipos : equipo
+                               | equipo COMA contenido_lista_equipos'''
+    if len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = [p[1]] + p[3]
+
+def p_equipo(p):
+    '''equipo : L_LLAVES contenido_equipo R_LLAVES'''
+    p[0] = p[2]
+    datos_json["equipos"].append(p[2])  # Solo almacenar, no escribir
+
+def p_contenido_equipo(p):
+    '''contenido_equipo : miembro_equipo
+                        | miembro_equipo COMA contenido_equipo'''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = {**p[1], **p[3]}
+
+def p_miembro_equipo(p):
+    '''miembro_equipo : NOMBRE_EQUIPO DOS_PUNTOS STRING
+                      | IDENTIDAD_EQUIPO DOS_PUNTOS STRING_URL
+                      | DIRECCION DOS_PUNTOS direccion
+                      | LINK DOS_PUNTOS STRING_URL
+                      | CARRERA DOS_PUNTOS STRING
+                      | ASIGNATURA DOS_PUNTOS STRING
+                      | UNIVERSIDAD_REGIONAL DOS_PUNTOS STRING
+                      | ALIANZA_EQUIPO DOS_PUNTOS STRING
+                      | INTEGRANTES DOS_PUNTOS lista_integrantes
+                      | PROYECTOS DOS_PUNTOS lista_proyectos'''
+    clave = p[1].replace('"', '')
+    valor = p[3]
+    
+    if clave == "direccion":
+        p[0] = {clave: valor}
+    elif clave in ["integrantes", "proyectos"]:
+        p[0] = {clave: valor}
+    else:
+        p[0] = {clave: valor.strip('"') if isinstance(valor, str) else valor}
+
+def p_direccion(p):
+    '''direccion : L_LLAVES contenido_direccion R_LLAVES'''
+    p[0] = p[2]
+
+def p_contenido_direccion(p):
+    '''contenido_direccion : miembro_direccion
+                           | miembro_direccion COMA contenido_direccion'''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = {**p[1], **p[3]}
+
+def p_miembro_direccion(p):
+    '''miembro_direccion : CALLE DOS_PUNTOS STRING
+                         | CIUDAD DOS_PUNTOS STRING
+                         | PAIS DOS_PUNTOS STRING'''
+    clave = p[1].replace('"', '')
+    p[0] = {clave: p[3].strip('"')}
+
+def p_lista_integrantes(p):
+    '''lista_integrantes : L_CORCHETES contenido_lista_integrantes R_CORCHETES'''
+    p[0] = p[2]
+
+def p_contenido_lista_integrantes(p):
+    '''contenido_lista_integrantes : vacio
+                                   | integrante
+                                   | integrante COMA contenido_lista_integrantes'''
+    if len(p) == 1 or p[1] is None:  # Caso vacío
+        p[0] = []
+    elif len(p) == 2:  # Un solo integrante
+        p[0] = [p[1]]
+    else:  # Múltiples integrantes
+        p[0] = [p[1]] + p[3]
+
+def p_integrante(p):
+    '''integrante : L_LLAVES contenido_integrante R_LLAVES'''
+    p[0] = p[2]
+
+def p_contenido_integrante(p):
+    '''contenido_integrante : miembro_integrante
+                            | miembro_integrante COMA contenido_integrante'''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = {**p[1], **p[3]}
+
+def p_miembro_integrante(p):
+    '''miembro_integrante : NOMBRE DOS_PUNTOS STRING
+                          | EDAD DOS_PUNTOS valor_edad
+                          | CARGO DOS_PUNTOS STRING
+                          | FOTO DOS_PUNTOS STRING_URL
+                          | EMAIL DOS_PUNTOS STRING_EMAIL
+                          | HABILIDADES DOS_PUNTOS STRING
+                          | SALARIO DOS_PUNTOS valor_salario
+                          | ACTIVO DOS_PUNTOS BOOL'''
+    clave = p[1].replace('"', '')
+    valor = p[3]
+    
+    if clave in ["nombre", "cargo", "habilidades"]:
+        p[0] = {clave: valor.strip('"')}
+    elif clave == "foto":
+        p[0] = {clave: valor}
+    elif clave == "email":
+        p[0] = {clave: valor.strip('"')}
+    elif clave == "edad":
+        p[0] = {clave: valor}
+    elif clave == "salario":
+        p[0] = {clave: valor}
+    elif clave == "activo":
+        p[0] = {clave: valor}
+
+def p_valor_edad(p):
+    '''valor_edad : ENTERO
+                  | NULL
+                  | vacio'''
+    if len(p) == 2 and p[1] == 'null':
+        p[0] = None
+    elif len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = None
+
+def p_valor_salario(p):
+    '''valor_salario : REAL
+                     | ENTERO'''
+    p[0] = p[1]
+
+def p_lista_proyectos(p):
+    '''lista_proyectos : L_CORCHETES contenido_lista_proyectos R_CORCHETES'''
+    p[0] = p[2]
+
+def p_contenido_lista_proyectos(p):
+    '''contenido_lista_proyectos : vacio
+                                 | proyecto
+                                 | proyecto COMA contenido_lista_proyectos'''
+    if len(p) == 1 or p[1] is None:  # Caso vacío
+        p[0] = []
+    elif len(p) == 2:  # Un solo proyecto
+        p[0] = [p[1]]
+    else:  # Múltiples proyectos
+        p[0] = [p[1]] + p[3]
+
+def p_proyecto(p):
+    '''proyecto : L_LLAVES contenido_proyecto R_LLAVES'''
+    p[0] = p[2]  # Solo almacenar, no escribir
+
+def p_contenido_proyecto(p):
+    '''contenido_proyecto : miembro_proyecto
+                          | miembro_proyecto COMA contenido_proyecto'''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = {**p[1], **p[3]}
+
+def p_miembro_proyecto(p):
+    '''miembro_proyecto : NOMBRE DOS_PUNTOS STRING
+                        | ESTADO DOS_PUNTOS STRING
+                        | RESUMEN DOS_PUNTOS STRING
+                        | TAREAS DOS_PUNTOS lista_tareas
+                        | FECHA_INICIO DOS_PUNTOS valor_fecha
+                        | FECHA_FIN DOS_PUNTOS valor_fecha
+                        | VIDEO DOS_PUNTOS STRING_URL
+                        | CONCLUSION DOS_PUNTOS STRING'''
+    clave = p[1].replace('"', '')
+    valor = p[3]
+    
+    if clave in ["nombre", "estado", "resumen", "conclusion"]:
+        p[0] = {clave: valor.strip('"')}
+    elif clave == "video":
+        p[0] = {clave: valor}
+    elif clave == "tareas":
+        p[0] = {clave: valor}
+    else:
+        p[0] = {clave: valor}
+
+def p_valor_fecha(p):
+    '''valor_fecha : FECHA
+                   | NULL
+                   | vacio'''
+    if len(p) == 2 and p[1] == 'null':
+        p[0] = None
+    elif len(p) == 2:
+        p[0] = p[1].strip('"')
+    else:
+        p[0] = None
+
+def p_lista_tareas(p):
+    '''lista_tareas : L_CORCHETES contenido_lista_tareas R_CORCHETES'''
+    p[0] = p[2]
+
+def p_contenido_lista_tareas(p):
+    '''contenido_lista_tareas : vacio
+                              | tarea
+                              | tarea COMA contenido_lista_tareas'''
+    if len(p) == 1 or p[1] is None:  # Caso vacío
+        p[0] = []
+    elif len(p) == 2:  # Una sola tarea
+        p[0] = [p[1]]
+    else:  # Múltiples tareas
+        p[0] = [p[1]] + p[3]
+
+def p_tarea(p):
+    '''tarea : L_LLAVES contenido_tarea R_LLAVES'''
+    p[0] = p[2]
+
+def p_contenido_tarea(p):
+    '''contenido_tarea : miembro_tarea
+                       | miembro_tarea COMA contenido_tarea'''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = {**p[1], **p[3]}
+
+def p_miembro_tarea(p):
+    '''miembro_tarea : NOMBRE DOS_PUNTOS STRING
+                     | ESTADO DOS_PUNTOS STRING
+                     | RESUMEN DOS_PUNTOS STRING
+                     | FECHA_INICIO DOS_PUNTOS valor_fecha
+                     | FECHA_FIN DOS_PUNTOS valor_fecha'''
+    clave = p[1].replace('"', '')
+    valor = p[3]
+    
+    if clave in ["nombre", "estado", "resumen"]:
+        p[0] = {clave: valor.strip('"')}
+    else:
+        p[0] = {clave: valor}
+
+def p_error(p):
+    if p:
+        # Mensaje de error mejorado
+        error_msg = f" ERROR DE SINTÁXIS EN LÍNEA {p.lineno}\n"
+        error_msg += f"Token inesperado: '{p.value}'\n"
+        error_msg += f"Contexto:\n{get_error_context(p)}"
+        
+        # Guardar el error en el archivo HTML
+        with open(html_file_path, "a", encoding="utf-8") as f:
+            f.write(f"<h2 style='color:red'>Error de procesamiento</h2>\n")
+            f.write(f"<p>{html.escape(error_msg)}</p>\n")
+        
+        mostrar_error(error_msg)
+    else:
+        error_msg = " ERROR: Fin inesperado del archivo"
+        
+        # Guardar el error en el archivo HTML
+        with open(html_file_path, "a", encoding="utf-8") as f:
+            f.write(f"<h2 style='color:red'>Error de procesamiento</h2>\n")
+            f.write(f"<p>{html.escape(error_msg)}</p>\n")
+        
+        mostrar_error(error_msg)
+
+def get_error_context(p):
+    """Obtiene el contexto alrededor del error"""
+    try:
+        with open(archivo_actual, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        if 0 <= p.lineno-1 < len(lines):
+            # Mostrar línea anterior, actual y siguiente
+            start_line = max(0, p.lineno - 2)
+            end_line = min(len(lines), p.lineno + 1)
+            
+            context = ""
+            for i in range(start_line, end_line):
+                line_num = i + 1
+                prefix = ">> " if line_num == p.lineno else "   "
+                context_line = lines[i].rstrip()
+                context += f"{prefix}{line_num:3d}: {context_line}\n"
+                
+                # Marcar posición del error
+                if line_num == p.lineno:
+                    # Calcular posición en la línea actual
+                    start_of_line = sum(len(lines[j]) for j in range(i))
+                    col = p.lexpos - start_of_line
+                    if col < len(context_line):
+                        context += " " * (len(prefix) + 5 + col) + "^\n"
+            
+            return context
+    except Exception as e:
+        return f"No se pudo obtener contexto: {str(e)}"
+    
+    return ""
+
+# -------------------------------
+# SECCIÓN DE GENERACIÓN DE HTML 
+# -------------------------------
+
+def generar_html_completo(archivo):
+    """Escribe todo el contenido HTML basado en datos_json"""
+    escribir_cabecera_html(archivo)
+    escribir_encabezado_principal(archivo)
+    escribir_seccion_equipos(archivo)
+    escribir_pie_html(archivo)
+
+def generar_html(nombre_archivo):
+    """Inicia la generación del archivo HTML"""
+    global html_file_handle, html_file_path
+    html_file_path = nombre_archivo
+    
+    try:
+        html_file_handle = open(nombre_archivo, "w", encoding="utf-8")
+        return True
+    except Exception as e:
+        mostrar_error(f"Error al generar HTML: {str(e)}")
+        return False
+
+def escribir_cabecera_html(archivo):
+    archivo.write("<!DOCTYPE html>\n<html>\n<head>\n")
+    archivo.write("<meta charset='UTF-8'>\n")
+    archivo.write("<title>Reporte de Equipos</title>\n")
+    archivo.write("<style>\n")
+    archivo.write("body { font-family: Arial, sans-serif; margin: 20px; }\n")
+    archivo.write(".equipo { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; }\n")
+    archivo.write(".integrante, .proyecto { margin-left: 20px; }\n")
+    archivo.write("table { border-collapse: collapse; width: 100%; margin: 10px 0; }\n")
+    archivo.write("th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }\n")
+    archivo.write("th { background-color: #f2f2f2; }\n")
+    archivo.write("h1, h2, h3 { color: #333; }\n")
+    archivo.write(".error { color: red; font-weight: bold; }\n")
+    archivo.write("</style>\n</head>\n<body>\n")
+
+def escribir_encabezado_principal(archivo):
+    archivo.write("<h1>Reporte de Equipos</h1>\n")
+    archivo.write("<hr>\n")
+
+def escribir_seccion_equipos(archivo):
+    for equipo in datos_json["equipos"]:
+        escribir_equipo(archivo, equipo)
+
+def escribir_equipo(archivo, equipo):
+    archivo.write("<div class='equipo'>\n")
+    archivo.write(f"<h1>{html.escape(equipo.get('nombre_equipo', ''))}</h1>\n")
+    
+    escribir_info_basica_equipo(archivo, equipo)
+    escribir_integrantes_equipo(archivo, equipo)
+    escribir_proyectos_equipo(archivo, equipo)
+    
+    archivo.write("</div>\n")
+
+def escribir_info_basica_equipo(archivo, equipo):
+    archivo.write("<p><strong>Identidad:</strong> ")
+    archivo.write(f"<a href='{html.escape(equipo.get('identidad_equipo', ''))}'>{html.escape(equipo.get('identidad_equipo', ''))}</a></p>\n")
+    
+    if 'direccion' in equipo:
+        dir_info = equipo['direccion']
+        info_direccion = f"{dir_info.get('calle', '')}, {dir_info.get('ciudad', '')}, {dir_info.get('pais', '')}"
+        archivo.write(f"<p><strong>Dirección:</strong> {html.escape(info_direccion)}</p>\n")
+    
+    archivo.write(f"<p><strong>Link:</strong> <a href='{html.escape(equipo.get('link', ''))}'>{html.escape(equipo.get('link', ''))}</a></p>\n")
+    archivo.write(f"<p><strong>Carrera:</strong> {html.escape(equipo.get('carrera', ''))}</p>\n")
+    archivo.write(f"<p><strong>Asignatura:</strong> {html.escape(equipo.get('asignatura', ''))}</p>\n")
+    archivo.write(f"<p><strong>Universidad Regional:</strong> {html.escape(equipo.get('universidad_regional', ''))}</p>\n")
+    archivo.write(f"<p><strong>Alianza de Equipo:</strong> {html.escape(equipo.get('alianza_equipo', ''))}</p>\n")
+
+def escribir_integrantes_equipo(archivo, equipo):
+    if 'integrantes' in equipo and equipo['integrantes']:
+        archivo.write("<h2>Integrantes</h2>\n")
+        archivo.write("<ul>\n")
+        for integrante in equipo["integrantes"]:
+            escribir_integrante(archivo, integrante)
+        archivo.write("</ul>\n")
+
+def escribir_integrante(archivo, integrante):
+    archivo.write("<li class='integrante'>\n")
+    archivo.write(f"<h3>{html.escape(integrante.get('nombre', ''))}</h3>\n")
+    archivo.write("<ul>\n")
+    if 'edad' in integrante and integrante['edad'] is not None:
+        archivo.write(f"<li><strong>Edad:</strong> {integrante['edad']}</li>\n")
+    archivo.write(f"<li><strong>Cargo:</strong> {html.escape(integrante.get('cargo', ''))}</li>\n")
+    if 'foto' in integrante:
+        archivo.write(f"<li><strong>Foto:</strong> <a href='{html.escape(integrante['foto'])}'>Enlace</a></li>\n")
+    if 'email' in integrante:
+        archivo.write(f"<li><strong>Email:</strong> <a href='mailto:{html.escape(integrante['email'])}'>{html.escape(integrante['email'])}</a></li>\n")
+    if 'habilidades' in integrante:
+        archivo.write(f"<li><strong>Habilidades:</strong> {html.escape(integrante['habilidades'])}</li>\n")
+    if 'salario' in integrante:
+        archivo.write(f"<li><strong>Salario:</strong> {integrante['salario']}</li>\n")
+    if 'activo' in integrante:
+        archivo.write(f"<li><strong>Activo:</strong> {'Sí' if integrante['activo'] else 'No'}</li>\n")
+    archivo.write("</ul>\n")
+    archivo.write("</li>\n")
+
+def escribir_proyectos_equipo(archivo, equipo):
+    if 'proyectos' in equipo and equipo['proyectos']:
+        archivo.write("<h2>Proyectos</h2>\n")
+        for proyecto in equipo["proyectos"]:
+            escribir_proyecto(archivo, proyecto)
+
+def escribir_proyecto(archivo, proyecto):
+    archivo.write("<div class='proyecto'>\n")
+    archivo.write(f"<h3>{html.escape(proyecto.get('nombre', ''))}</h3>\n")
+    archivo.write(f"<p><strong>Estado:</strong> {html.escape(proyecto.get('estado', ''))}</p>\n")
+    archivo.write(f"<p><strong>Resumen:</strong> {html.escape(proyecto.get('resumen', ''))}</p>\n")
+    
+    if 'tareas' in proyecto and proyecto['tareas']:
+        escribir_tabla_tareas(archivo, proyecto["tareas"])
+    
+    if 'fecha_inicio' in proyecto:
+        archivo.write(f"<p><strong>Fecha Inicio:</strong> {proyecto.get('fecha_inicio', '')}</p>\n")
+    if 'fecha_fin' in proyecto:
+        archivo.write(f"<p><strong>Fecha Fin:</strong> {proyecto.get('fecha_fin', '')}</p>\n")
+    if 'video' in proyecto:
+        archivo.write(f"<p><strong>Video:</strong> <a href='{html.escape(proyecto['video'])}'>Ver video</a></p>\n")
+    if 'conclusion' in proyecto:
+        archivo.write(f"<p><strong>Conclusión:</strong> {html.escape(proyecto['conclusion'])}</p>\n")
+    archivo.write("</div>\n")
+
+def escribir_tabla_tareas(archivo, tareas):
+    archivo.write("<h4>Tareas</h4>\n")
+    archivo.write("<table>\n")
+    archivo.write("<tr><th>Nombre</th><th>Estado</th><th>Resumen</th><th>Fecha Inicio</th><th>Fecha Fin</th></tr>\n")
+    
+    for tarea in tareas:
+        escribir_fila_tarea(archivo, tarea)
+    
+    archivo.write("</table>\n")
+
+def escribir_fila_tarea(archivo, tarea):
+    archivo.write("<tr>\n")
+    archivo.write(f"<td>{html.escape(tarea.get('nombre', ''))}</td>\n")
+    archivo.write(f"<td>{html.escape(tarea.get('estado', ''))}</td>\n")
+    archivo.write(f"<td>{html.escape(tarea.get('resumen', ''))}</td>\n")
+    archivo.write(f"<td>{tarea.get('fecha_inicio', '')}</td>\n")
+    archivo.write(f"<td>{tarea.get('fecha_fin', '')}</td>\n")
+    archivo.write("</tr>\n")
+
+def escribir_pie_html(archivo):
+    archivo.write(f"<p><strong>Versión:</strong> {html.escape(datos_json['version'])}</p>\n")
+    archivo.write(f"<p><strong>Firma digital:</strong> {html.escape(datos_json['firma_digital'])}</p>\n")
+    archivo.write("</body>\n</html>\n")
+
+# Construir el parser
+parser = yacc.yacc()
+
+# -------------------------------
+# INTERFAZ GRÁFICA 
+# -------------------------------
+
+def crear_interfaz():
+    root = tk.Tk()
+    root.title("JSON to HTML Converter")
+    root.geometry("800x600")
+    
+    # Frame principal
+    main_frame = tk.Frame(root, padx=20, pady=20)
+    main_frame.pack(fill=tk.BOTH, expand=True)
+    
+    # Título
+    tk.Label(main_frame, text="Conversor de JSON a HTML", 
+            font=("Arial", 16, "bold")).pack(pady=10)
+    
+    # Frame de botones
+    btn_frame = tk.Frame(main_frame)
+    btn_frame.pack(pady=10)
+    
+    # Botones
+    btn_seleccionar = tk.Button(btn_frame, text="Seleccionar JSON", 
+                               command=seleccionar_archivo, width=20)
+    btn_seleccionar.pack(side=tk.LEFT, padx=5)
+    
+    btn_abrir_html = tk.Button(btn_frame, text="Abrir HTML", 
+                              command=abrir_html, width=15)
+    btn_abrir_html.pack(side=tk.LEFT, padx=5)
+    
+    btn_salir = tk.Button(btn_frame, text="Salir", 
+                         command=root.destroy, width=10)
+    btn_salir.pack(side=tk.LEFT, padx=5)
+    
+    # Área de texto para resultados
+    global txt_resultado
+    txt_resultado = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, 
+                                            font=("Consolas", 10), height=20)
+    txt_resultado.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+    txt_resultado.config(state=tk.DISABLED)
+    
+    # Estado inicial
+    mostrar_resultado("Seleccione un archivo JSON para comenzar...")
+    
+    root.mainloop()
+
+def seleccionar_archivo():
+    global archivo_actual
+    archivo = filedialog.askopenfilename(
+        title="Seleccionar archivo JSON",
+        filetypes=[("Archivos JSON", "*.json"), ("Todos los archivos", "*.*")]
+    )
+    
+    if archivo:
+        archivo_actual = archivo
+        procesar_archivo(archivo)
+
+def abrir_html():
+    if html_file_path:
+        if os.path.exists(html_file_path):
+            webbrowser.open('file://' + os.path.realpath(html_file_path))
+        else:
+            messagebox.showwarning("Advertencia", "No se ha generado ningún archivo HTML")
+
+  
+
+def procesar_archivo(archivo):
+    try:
+        with open(archivo, "r", encoding="utf-8") as f:
+            data = f.read()
+        
+        # Limpiar datos anteriores
+        datos_json["equipos"] = []
+        datos_json["version"] = ""
+        datos_json["firma_digital"] = ""
+        
+        # Iniciar generación de HTML
+        archivo_salida = os.path.splitext(archivo)[0] + ".html"
+        if not generar_html(archivo_salida):
+            return
+            
+        # Reiniciar el lexer y parser
+        lexer.lineno = 1                           #PARA CONTAR LAS LINEAS DEL ERROR    
+        #lexer.input(data)  # Alimentar el lexer con los nuevos datos
+        parser.parse(data, lexer=lexer)     
+        
+    except FileNotFoundError:
+        mostrar_error(f"Error: Archivo no encontrado\n{archivo}")
+    except Exception as e:
+        error_msg = f"Error inesperado:\n{str(e)}\n\n"
+        error_msg += "Detalles:\n" + traceback.format_exc()
+        mostrar_error(error_msg)
+
+def mostrar_resultado(mensaje):
+    txt_resultado.config(state=tk.NORMAL)
+    txt_resultado.delete(1.0, tk.END)
+    txt_resultado.insert(tk.END, mensaje)
+    txt_resultado.config(state=tk.DISABLED)
+
+def mostrar_error(mensaje):
+    txt_resultado.config(state=tk.NORMAL)
+    txt_resultado.delete(1.0, tk.END)
+    txt_resultado.insert(tk.END, mensaje)
+    txt_resultado.config(state=tk.DISABLED)
+    messagebox.showerror("Error", "Se encontraron problemas en el procesamiento")
+
+# -------------------------------
+# EJECUCIÓN PRINCIPAL
+# -------------------------------
+
+if __name__ == "__main__":
+    crear_interfaz()
