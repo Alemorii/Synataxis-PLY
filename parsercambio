@@ -18,7 +18,6 @@ datos_json = {
 archivo_actual = ""
 html_file_handle = None
 html_file_path = ""
-error_occurred = False
 
 # -------------------------------
 # SECCIÓN DEL PARSER (ANÁLISIS SINTÁCTICO) 
@@ -29,14 +28,14 @@ def p_json(p):
              VERSION DOS_PUNTOS STRING COMA \
              FIRMA_DIGITAL DOS_PUNTOS STRING \
              R_LLAVES'''
-    datos_json["version"] = p[8]
-    datos_json["firma_digital"] = p[12]
+    datos_json["version"] = p[8].strip('"')
+    datos_json["firma_digital"] = p[12].strip('"')
     
     # Generar TODO el HTML al final
     generar_html_completo(html_file_handle)
     html_file_handle.close()
     
-    mostrar_resultado(f"✓ Documento JSON válido\nHTML generado: {html_file_path}")
+    mostrar_resultado(f" Documento JSON válido\nHTML generado: {html_file_path}")
 
 def p_coma_opcional(p):
     '''coma_opcional : COMA
@@ -62,7 +61,7 @@ def p_contenido_lista_equipos(p):
 def p_equipo(p):
     '''equipo : L_LLAVES contenido_equipo R_LLAVES'''
     p[0] = p[2]
-    datos_json["equipos"].append(p[2])  # Almacenar equipo
+    datos_json["equipos"].append(p[2])  # Solo almacenar, no escribir
 
 def p_contenido_equipo(p):
     '''contenido_equipo : miembro_equipo
@@ -91,7 +90,7 @@ def p_miembro_equipo(p):
     elif clave in ["integrantes", "proyectos"]:
         p[0] = {clave: valor}
     else:
-        p[0] = {clave: valor if isinstance(valor, str) else valor}
+        p[0] = {clave: valor.strip('"') if isinstance(valor, str) else valor}
 
 def p_direccion(p):
     '''direccion : L_LLAVES contenido_direccion R_LLAVES'''
@@ -110,7 +109,7 @@ def p_miembro_direccion(p):
                          | CIUDAD DOS_PUNTOS STRING
                          | PAIS DOS_PUNTOS STRING'''
     clave = p[1].replace('"', '')
-    p[0] = {clave: p[3]}
+    p[0] = {clave: p[3].strip('"')}
 
 def p_lista_integrantes(p):
     '''lista_integrantes : L_CORCHETES contenido_lista_integrantes R_CORCHETES'''
@@ -120,11 +119,11 @@ def p_contenido_lista_integrantes(p):
     '''contenido_lista_integrantes : vacio
                                    | integrante
                                    | integrante COMA contenido_lista_integrantes'''
-    if len(p) == 1 or p[1] is None:
+    if len(p) == 1 or p[1] is None:  # Caso vacío
         p[0] = []
-    elif len(p) == 2:
+    elif len(p) == 2:  # Un solo integrante
         p[0] = [p[1]]
-    else:
+    else:  # Múltiples integrantes
         p[0] = [p[1]] + p[3]
 
 def p_integrante(p):
@@ -152,11 +151,11 @@ def p_miembro_integrante(p):
     valor = p[3]
     
     if clave in ["nombre", "cargo", "habilidades"]:
-        p[0] = {clave: valor}
+        p[0] = {clave: valor.strip('"')}
     elif clave == "foto":
         p[0] = {clave: valor}
     elif clave == "email":
-        p[0] = {clave: valor}
+        p[0] = {clave: valor.strip('"')}
     elif clave == "edad":
         p[0] = {clave: valor}
     elif clave == "salario":
@@ -188,16 +187,16 @@ def p_contenido_lista_proyectos(p):
     '''contenido_lista_proyectos : vacio
                                  | proyecto
                                  | proyecto COMA contenido_lista_proyectos'''
-    if len(p) == 1 or p[1] is None:
+    if len(p) == 1 or p[1] is None:  # Caso vacío
         p[0] = []
-    elif len(p) == 2:
+    elif len(p) == 2:  # Un solo proyecto
         p[0] = [p[1]]
-    else:
+    else:  # Múltiples proyectos
         p[0] = [p[1]] + p[3]
 
 def p_proyecto(p):
     '''proyecto : L_LLAVES contenido_proyecto R_LLAVES'''
-    p[0] = p[2]
+    p[0] = p[2]  # Solo almacenar, no escribir
 
 def p_contenido_proyecto(p):
     '''contenido_proyecto : miembro_proyecto
@@ -220,7 +219,7 @@ def p_miembro_proyecto(p):
     valor = p[3]
     
     if clave in ["nombre", "estado", "resumen", "conclusion"]:
-        p[0] = {clave: valor}
+        p[0] = {clave: valor.strip('"')}
     elif clave == "video":
         p[0] = {clave: valor}
     elif clave == "tareas":
@@ -235,7 +234,7 @@ def p_valor_fecha(p):
     if len(p) == 2 and p[1] == 'null':
         p[0] = None
     elif len(p) == 2:
-        p[0] = p[1]
+        p[0] = p[1].strip('"')
     else:
         p[0] = None
 
@@ -247,11 +246,11 @@ def p_contenido_lista_tareas(p):
     '''contenido_lista_tareas : vacio
                               | tarea
                               | tarea COMA contenido_lista_tareas'''
-    if len(p) == 1 or p[1] is None:
+    if len(p) == 1 or p[1] is None:  # Caso vacío
         p[0] = []
-    elif len(p) == 2:
+    elif len(p) == 2:  # Una sola tarea
         p[0] = [p[1]]
-    else:
+    else:  # Múltiples tareas
         p[0] = [p[1]] + p[3]
 
 def p_tarea(p):
@@ -276,46 +275,41 @@ def p_miembro_tarea(p):
     valor = p[3]
     
     if clave in ["nombre", "estado", "resumen"]:
-        p[0] = {clave: valor}
+        p[0] = {clave: valor.strip('"')}
     else:
         p[0] = {clave: valor}
 
 def p_error(p):
-    global error_occurred
-    error_occurred = True
-    
     if p:
-        error_msg = f"✗ ERROR DE SINTÁXIS EN LÍNEA {p.lineno}\n"
+        # Mensaje de error mejorado
+        error_msg = f" ERROR DE SINTÁXIS EN LÍNEA {p.lineno}\n"
         error_msg += f"Token inesperado: '{p.value}'\n"
         error_msg += f"Contexto:\n{get_error_context(p)}"
         
-        # Generar HTML con datos parciales
-        generar_html_completo(html_file_handle, error=error_msg)
-        html_file_handle.close()
+        # Guardar el error en el archivo HTML
+        with open(html_file_path, "a", encoding="utf-8") as f:
+            f.write(f"<h2 style='color:red'>Error de procesamiento</h2>\n")
+            f.write(f"<p>{html.escape(error_msg)}</p>\n")
         
         mostrar_error(error_msg)
     else:
-        error_msg = "✗ ERROR: Fin inesperado del archivo"
+        error_msg = " ERROR: Fin inesperado del archivo"
         
-        # Generar HTML con datos parciales
-        generar_html_completo(html_file_handle, error=error_msg)
-        html_file_handle.close()
+        # Guardar el error en el archivo HTML
+        with open(html_file_path, "a", encoding="utf-8") as f:
+            f.write(f"<h2 style='color:red'>Error de procesamiento</h2>\n")
+            f.write(f"<p>{html.escape(error_msg)}</p>\n")
         
         mostrar_error(error_msg)
-        
-    # Recuperación: saltar hasta el siguiente objeto o estructura
-    while True:
-        tok = parser.token()
-        if not tok or tok.type == 'R_LLAVES' or tok.type == 'R_CORCHETES':
-            break
-    parser.restart()
 
 def get_error_context(p):
+    """Obtiene el contexto alrededor del error"""
     try:
         with open(archivo_actual, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         
         if 0 <= p.lineno-1 < len(lines):
+            # Mostrar línea anterior, actual y siguiente
             start_line = max(0, p.lineno - 2)
             end_line = min(len(lines), p.lineno + 1)
             
@@ -326,7 +320,9 @@ def get_error_context(p):
                 context_line = lines[i].rstrip()
                 context += f"{prefix}{line_num:3d}: {context_line}\n"
                 
+                # Marcar posición del error
                 if line_num == p.lineno:
+                    # Calcular posición en la línea actual
                     start_of_line = sum(len(lines[j]) for j in range(i))
                     col = p.lexpos - start_of_line
                     if col < len(context_line):
@@ -342,24 +338,17 @@ def get_error_context(p):
 # SECCIÓN DE GENERACIÓN DE HTML 
 # -------------------------------
 
-def generar_html_completo(archivo, error=None):
+def generar_html_completo(archivo):
+    """Escribe todo el contenido HTML basado en datos_json"""
     escribir_cabecera_html(archivo)
     escribir_encabezado_principal(archivo)
     escribir_seccion_equipos(archivo)
-    
-    # Agregar mensaje de error si existe
-    if error:
-        archivo.write("<div class='error'>\n")
-        archivo.write(f"<h2>Error durante el análisis</h2>\n")
-        archivo.write(f"<pre>{html.escape(error)}</pre>\n")
-        archivo.write("</div>\n")
-    
     escribir_pie_html(archivo)
 
 def generar_html(nombre_archivo):
-    global html_file_handle, html_file_path, error_occurred
+    """Inicia la generación del archivo HTML"""
+    global html_file_handle, html_file_path
     html_file_path = nombre_archivo
-    error_occurred = False
     
     try:
         html_file_handle = open(nombre_archivo, "w", encoding="utf-8")
@@ -380,27 +369,16 @@ def escribir_cabecera_html(archivo):
     archivo.write("th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }\n")
     archivo.write("th { background-color: #f2f2f2; }\n")
     archivo.write("h1, h2, h3 { color: #333; }\n")
-    archivo.write(".error { color: red; background-color: #ffeeee; padding: 15px; border: 2px solid red; margin-top: 20px; }\n")
-    archivo.write(".warning { color: #8B8000; background-color: #ffffe0; padding: 10px; border: 1px solid #e6db55; }\n")
+    archivo.write(".error { color: red; font-weight: bold; }\n")
     archivo.write("</style>\n</head>\n<body>\n")
 
 def escribir_encabezado_principal(archivo):
     archivo.write("<h1>Reporte de Equipos</h1>\n")
     archivo.write("<hr>\n")
-    
-    # Mostrar advertencia si hubo errores
-    if error_occurred:
-        archivo.write("<div class='warning'>\n")
-        archivo.write("<p>⚠️ <strong>Advertencia:</strong> El documento contiene errores. ");
-        archivo.write("Se muestra la información procesada hasta el punto del error.</p>\n")
-        archivo.write("</div>\n")
 
 def escribir_seccion_equipos(archivo):
-    if datos_json["equipos"]:
-        for equipo in datos_json["equipos"]:
-            escribir_equipo(archivo, equipo)
-    else:
-        archivo.write("<p>No se encontraron equipos válidos.</p>\n")
+    for equipo in datos_json["equipos"]:
+        escribir_equipo(archivo, equipo)
 
 def escribir_equipo(archivo, equipo):
     archivo.write("<div class='equipo'>\n")
@@ -413,25 +391,19 @@ def escribir_equipo(archivo, equipo):
     archivo.write("</div>\n")
 
 def escribir_info_basica_equipo(archivo, equipo):
-    if 'identidad_equipo' in equipo:
-        archivo.write("<p><strong>Identidad:</strong> ")
-        archivo.write(f"<a href='{html.escape(equipo.get('identidad_equipo', ''))}'>{html.escape(equipo.get('identidad_equipo', ''))}</a></p>\n")
+    archivo.write("<p><strong>Identidad:</strong> ")
+    archivo.write(f"<a href='{html.escape(equipo.get('identidad_equipo', ''))}'>{html.escape(equipo.get('identidad_equipo', ''))}</a></p>\n")
     
     if 'direccion' in equipo:
         dir_info = equipo['direccion']
         info_direccion = f"{dir_info.get('calle', '')}, {dir_info.get('ciudad', '')}, {dir_info.get('pais', '')}"
         archivo.write(f"<p><strong>Dirección:</strong> {html.escape(info_direccion)}</p>\n")
     
-    if 'link' in equipo:
-        archivo.write(f"<p><strong>Link:</strong> <a href='{html.escape(equipo.get('link', ''))}'>{html.escape(equipo.get('link', ''))}</a></p>\n")
-    if 'carrera' in equipo:
-        archivo.write(f"<p><strong>Carrera:</strong> {html.escape(equipo.get('carrera', ''))}</p>\n")
-    if 'asignatura' in equipo:
-        archivo.write(f"<p><strong>Asignatura:</strong> {html.escape(equipo.get('asignatura', ''))}</p>\n")
-    if 'universidad_regional' in equipo:
-        archivo.write(f"<p><strong>Universidad Regional:</strong> {html.escape(equipo.get('universidad_regional', ''))}</p>\n")
-    if 'alianza_equipo' in equipo:
-        archivo.write(f"<p><strong>Alianza de Equipo:</strong> {html.escape(equipo.get('alianza_equipo', ''))}</p>\n")
+    archivo.write(f"<p><strong>Link:</strong> <a href='{html.escape(equipo.get('link', ''))}'>{html.escape(equipo.get('link', ''))}</a></p>\n")
+    archivo.write(f"<p><strong>Carrera:</strong> {html.escape(equipo.get('carrera', ''))}</p>\n")
+    archivo.write(f"<p><strong>Asignatura:</strong> {html.escape(equipo.get('asignatura', ''))}</p>\n")
+    archivo.write(f"<p><strong>Universidad Regional:</strong> {html.escape(equipo.get('universidad_regional', ''))}</p>\n")
+    archivo.write(f"<p><strong>Alianza de Equipo:</strong> {html.escape(equipo.get('alianza_equipo', ''))}</p>\n")
 
 def escribir_integrantes_equipo(archivo, equipo):
     if 'integrantes' in equipo and equipo['integrantes']:
@@ -447,8 +419,7 @@ def escribir_integrante(archivo, integrante):
     archivo.write("<ul>\n")
     if 'edad' in integrante and integrante['edad'] is not None:
         archivo.write(f"<li><strong>Edad:</strong> {integrante['edad']}</li>\n")
-    if 'cargo' in integrante:
-        archivo.write(f"<li><strong>Cargo:</strong> {html.escape(integrante.get('cargo', ''))}</li>\n")
+    archivo.write(f"<li><strong>Cargo:</strong> {html.escape(integrante.get('cargo', ''))}</li>\n")
     if 'foto' in integrante:
         archivo.write(f"<li><strong>Foto:</strong> <a href='{html.escape(integrante['foto'])}'>Enlace</a></li>\n")
     if 'email' in integrante:
@@ -470,12 +441,9 @@ def escribir_proyectos_equipo(archivo, equipo):
 
 def escribir_proyecto(archivo, proyecto):
     archivo.write("<div class='proyecto'>\n")
-    if 'nombre' in proyecto:
-        archivo.write(f"<h3>{html.escape(proyecto.get('nombre', ''))}</h3>\n")
-    if 'estado' in proyecto:
-        archivo.write(f"<p><strong>Estado:</strong> {html.escape(proyecto.get('estado', ''))}</p>\n")
-    if 'resumen' in proyecto:
-        archivo.write(f"<p><strong>Resumen:</strong> {html.escape(proyecto.get('resumen', ''))}</p>\n")
+    archivo.write(f"<h3>{html.escape(proyecto.get('nombre', ''))}</h3>\n")
+    archivo.write(f"<p><strong>Estado:</strong> {html.escape(proyecto.get('estado', ''))}</p>\n")
+    archivo.write(f"<p><strong>Resumen:</strong> {html.escape(proyecto.get('resumen', ''))}</p>\n")
     
     if 'tareas' in proyecto and proyecto['tareas']:
         escribir_tabla_tareas(archivo, proyecto["tareas"])
@@ -510,10 +478,8 @@ def escribir_fila_tarea(archivo, tarea):
     archivo.write("</tr>\n")
 
 def escribir_pie_html(archivo):
-    if datos_json["version"] or datos_json["firma_digital"]:
-        archivo.write("<hr>\n")
-        archivo.write(f"<p><strong>Versión:</strong> {html.escape(datos_json['version'])}</p>\n")
-        archivo.write(f"<p><strong>Firma digital:</strong> {html.escape(datos_json['firma_digital'])}</p>\n")
+    archivo.write(f"<p><strong>Versión:</strong> {html.escape(datos_json['version'])}</p>\n")
+    archivo.write(f"<p><strong>Firma digital:</strong> {html.escape(datos_json['firma_digital'])}</p>\n")
     archivo.write("</body>\n</html>\n")
 
 # Construir el parser
@@ -583,6 +549,8 @@ def abrir_html():
         else:
             messagebox.showwarning("Advertencia", "No se ha generado ningún archivo HTML")
 
+  
+
 def procesar_archivo(archivo):
     try:
         with open(archivo, "r", encoding="utf-8") as f:
@@ -599,20 +567,15 @@ def procesar_archivo(archivo):
             return
             
         # Reiniciar el lexer y parser
-        lexer.lineno = 1
-        lexer.input(data)
-        parser.parse(data, lexer=lexer)
-        
-        # Si no hubo errores, pero no se generó HTML en p_json
-        if not error_occurred:
-            generar_html_completo(html_file_handle)
-            html_file_handle.close()
-            mostrar_resultado(f"✓ Documento JSON válido\nHTML generado: {html_file_path}")
+        lexer.lineno = 1                           #PARA CONTAR LAS LINEAS DEL ERROR    
+        #lexer.input(data)  # Alimentar el lexer con los nuevos datos
+        parser.parse(data, lexer=lexer)     
         
     except FileNotFoundError:
         mostrar_error(f"Error: Archivo no encontrado\n{archivo}")
     except Exception as e:
-        error_msg = f"Error inesperado:\n{str(e)}\n\nDetalles:\n{traceback.format_exc()}"
+        error_msg = f"Error inesperado:\n{str(e)}\n\n"
+        error_msg += "Detalles:\n" + traceback.format_exc()
         mostrar_error(error_msg)
 
 def mostrar_resultado(mensaje):
